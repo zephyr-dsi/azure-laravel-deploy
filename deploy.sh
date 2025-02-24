@@ -1,30 +1,28 @@
 #!/bin/bash
-set -e  # Arrêter le script en cas d'erreur
-set -x  # Afficher les commandes exécutées
+set -euo pipefail  # Gestion stricte des erreurs
 
-# 1. Prérequis système
+# 1. Installer les dépendances système
+apt-get update
 apt-get install -y software-properties-common curl git
 
-# 2. Configuration des dépôts
-add-apt-repository ppa:ondrej/php -y
+# 2. Ajouter le dépôt PHP
+LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
 apt-get update
 
-# 3. Installation des paquets
+# 3. Installer les paquets
 apt-get install -y \
     nginx \
-    php8.2 \
     php8.2-fpm \
     php8.2-mysql \
     php8.2-mbstring \
     php8.2-xml \
     php8.2-zip \
-    php8.2-bcmath \
-    unzip
+    php8.2-bcmath
 
-# 4. Installation de Composer
-curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# 4. Installer Composer (dernière version)
+curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer --2
 
-# 5. Configuration Nginx
+# 5. Configurer Nginx (échappement des variables avec \)
 cat > /etc/nginx/sites-available/laravel <<'EOF'
 server {
     listen 80;
@@ -33,13 +31,13 @@ server {
     index index.php index.html index.htm;
 
     location / {
-        try_files $uri $uri/ /index.php?$query_string;
+        try_files \$uri \$uri/ /index.php?\$query_string;
     }
 
     location ~ \.php$ {
         include snippets/fastcgi-php.conf;
         fastcgi_pass unix:/run/php/php8.2-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;
         include fastcgi_params;
     }
 
@@ -49,30 +47,30 @@ server {
 }
 EOF
 
-# 6. Activation de la configuration
+# 6. Valider et activer la config Nginx
+nginx -t  # Test de syntaxe
 rm -f /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
-nginx -t  # Validation de la configuration
 systemctl reload nginx
 
-# 7. Déploiement de Laravel
+# 7. Déployer Laravel
 mkdir -p /var/www
 cd /var/www
 composer create-project --prefer-dist laravel/laravel laravel
 
-# 8. Permissions
+# 8. Appliquer les permissions
 chown -R www-data:www-data /var/www/laravel
 chmod -R 755 /var/www/laravel
 cd /var/www/laravel
-php artisan key:generate
+php artisan key:generate --force
 chmod -R 775 storage bootstrap/cache
 
-# 9. Pare-feu
+# 9. Configurer le pare-feu
 ufw allow OpenSSH
 ufw allow 80
-echo "y" | ufw enable
+yes | ufw enable
 
-# 10. Démarrage des services
+# 10. Démarrer les services
 systemctl enable --now nginx php8.2-fpm
 
-echo "Déploiement réussi! Accédez à http://<ip-publique-vm>"
+echo "Déploiement terminé ! Accès : http://$(curl -s ifconfig.me)"
