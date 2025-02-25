@@ -8,6 +8,20 @@ function print_title {
     echo -e "\033[1;36m========================================\033[0m\n"
 }
 
+# Fonction pour afficher une barre de progression
+function show_progress {
+    local duration=${1}
+    local steps=${2}
+    local step=0
+
+    while [ $step -lt $steps ]; do
+        echo -n "."
+        sleep $duration
+        step=$((step + 1))
+    done
+    echo -e "\n"
+}
+
 # Afficher le titre du script
 print_title "🛠️ Script de déploiement d'une application Laravel sur Azure 🚀"
 
@@ -31,6 +45,8 @@ echo -e "  - \033[1;34mphp8.2-xml\033[0m (pour le traitement XML)"
 echo -e "  - \033[1;34mphp8.2-zip\033[0m (pour la compression et décompression de fichiers)"
 echo -e "  - \033[1;34mphp8.2-bcmath\033[0m (pour les calculs mathématiques de précision)"
 echo -e "  - \033[1;34mphp8.2-sqlite3\033[0m (pour utiliser SQLite comme base de données)"
+echo -e "  - \033[1;34mphp8.2-mysql\033[0m (pour utiliser MySQL comme base de données)"
+echo -e "  - \033[1;34mphp8.2-pgsql\033[0m (pour utiliser PostgreSQL comme base de données)"
 echo -e "\033[1;32m- Installation de Composer\033[0m"
 echo -e "\033[1;32m- Déploiement d'une application Laravel\033[0m"
 echo -e "\033[1;32m- Configuration des permissions pour Laravel\033[0m"
@@ -54,28 +70,41 @@ exec > >(sudo tee /var/log/vm_setup.log) 2>&1
 
 echo "🔄 Mise à jour des paquets..."
 sudo apt update -qq && sudo apt upgrade -y
+show_progress 0.5 10  # Barre de progression pendant la mise à jour
 
 echo "📦 Installation des dépendances de base..."
 sudo apt install -y software-properties-common curl git unzip supervisor cron redis-server
+show_progress 0.5 10  # Barre de progression pendant l'installation
 
 echo "📦 Installation de Node.js et NPM..."
 curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt install -y nodejs
+show_progress 0.5 10  # Barre de progression pendant l'installation
 
 echo "📦 Ajout du dépôt PHP 8.2 et installation..."
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update -qq
-sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3
+sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3 php8.2-mysql php8.2-pgsql
+show_progress 0.5 10  # Barre de progression pendant l'installation
 
 echo "📦 Installation de Composer..."
 curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp
 sudo mv /tmp/composer.phar /usr/local/bin/composer
+show_progress 0.5 5  # Barre de progression pendant l'installation
 
 echo "🚀 Déploiement de Laravel..."
 sudo mkdir -p /var/www
 cd /var/www
+
+# Supprimer le répertoire laravel s'il existe déjà
+if [ -d "laravel" ]; then
+    echo "🗑️ Suppression de l'ancien répertoire laravel..."
+    sudo rm -rf laravel
+fi
+
 export COMPOSER_ALLOW_SUPERUSER=1
 yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --no-dev
+show_progress 0.5 10  # Barre de progression pendant la création du projet
 
 if [ ! -d "/var/www/laravel" ]; then
     echo "❌ Échec de l'installation de Laravel."
