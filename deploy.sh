@@ -11,18 +11,32 @@ function print_title {
 # Afficher le titre du script
 print_title "🛠️ Script de déploiement d'une application Laravel sur Azure 🚀"
 
-# Afficher la liste des éléments à installer
+# Afficher la liste des éléments qui seront installés et configurés
 echo -e "\033[1;33m📋 Liste des éléments qui seront installés et configurés :\033[0m"
 echo -e "\033[1;32m- Mise à jour des paquets système\033[0m"
-echo -e "\033[1;32m- Installation des dépendances de base (curl, git, unzip, etc.)\033[0m"
+echo -e "\033[1;32m- Installation des dépendances de base :\033[0m"
+echo -e "  - \033[1;34msoftware-properties-common\033[0m (pour gérer les dépôts PPAs)"
+echo -e "  - \033[1;34mcurl\033[0m (pour télécharger des fichiers depuis Internet)"
+echo -e "  - \033[1;34mgit\033[0m (pour cloner des dépôts et gérer le versionnement)"
+echo -e "  - \033[1;34munzip\033[0m (pour décompresser des fichiers)"
+echo -e "  - \033[1;34msupervisor\033[0m (pour gérer les processus en arrière-plan)"
+echo -e "  - \033[1;34mcron\033[0m (pour exécuter des tâches planifiées)"
+echo -e "  - \033[1;34mredis-server\033[0m (pour le cache et les files d'attente)"
 echo -e "\033[1;32m- Installation de Node.js et NPM\033[0m"
-echo -e "\033[1;32m- Installation de PHP 8.2 et extensions nécessaires\033[0m"
+echo -e "\033[1;32m- Installation de PHP 8.2 et extensions nécessaires :\033[0m"
+echo -e "  - \033[1;34mphp8.2\033[0m (PHP 8.2)"
+echo -e "  - \033[1;34mphp8.2-fpm\033[0m (PHP FastCGI Process Manager)"
+echo -e "  - \033[1;34mphp8.2-mbstring\033[0m (pour les chaînes de caractères multi-octets)"
+echo -e "  - \033[1;34mphp8.2-xml\033[0m (pour le traitement XML)"
+echo -e "  - \033[1;34mphp8.2-zip\033[0m (pour la compression et décompression de fichiers)"
+echo -e "  - \033[1;34mphp8.2-bcmath\033[0m (pour les calculs mathématiques de précision)"
+echo -e "  - \033[1;34mphp8.2-sqlite3\033[0m (pour utiliser SQLite comme base de données)"
 echo -e "\033[1;32m- Installation de Composer\033[0m"
 echo -e "\033[1;32m- Déploiement d'une application Laravel\033[0m"
 echo -e "\033[1;32m- Configuration des permissions pour Laravel\033[0m"
 echo -e "\033[1;32m- Génération de la clé Laravel\033[0m"
 echo -e "\033[1;32m- Configuration de Nginx pour Laravel\033[0m"
-echo -e "\033[1;32m- Configuration de Redis pour écouter en local\033[0m"
+echo -e "\033[1;32m- Configuration de Redis pour écouter uniquement en local\033[0m"
 echo -e "\033[1;32m- Configuration de Supervisor pour les workers Laravel\033[0m"
 echo -e "\033[1;32m- Redémarrage des services (Nginx, PHP-FPM, Redis, Supervisor)\033[0m"
 echo -e "\033[1;32m- Vérification des versions installées\033[0m"
@@ -36,7 +50,7 @@ if [[ ! $REPLY =~ ^[Oo]$ ]]; then
 fi
 
 echo "📝 Journalisation des étapes..."
-exec > >(tee /var/log/vm_setup.log) 2>&1
+exec > >(sudo tee /var/log/vm_setup.log) 2>&1
 
 echo "🔄 Mise à jour des paquets..."
 sudo apt update -qq && sudo apt upgrade -y
@@ -51,7 +65,7 @@ sudo apt install -y nodejs
 echo "📦 Ajout du dépôt PHP 8.2 et installation..."
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update -qq
-sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath
+sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3
 
 echo "📦 Installation de Composer..."
 curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp
