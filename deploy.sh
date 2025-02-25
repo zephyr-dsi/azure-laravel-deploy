@@ -1,6 +1,40 @@
 #!/bin/bash
 set -euo pipefail
 
+# Fonction pour afficher un titre stylisé
+function print_title {
+    echo -e "\n\033[1;36m========================================\033[0m"
+    echo -e "\033[1;36m$1\033[0m"
+    echo -e "\033[1;36m========================================\033[0m\n"
+}
+
+# Afficher le titre du script
+print_title "🛠️ Script de déploiement d'une application Laravel sur Azure 🚀"
+
+# Afficher la liste des éléments à installer
+echo -e "\033[1;33m📋 Liste des éléments qui seront installés et configurés :\033[0m"
+echo -e "\033[1;32m- Mise à jour des paquets système\033[0m"
+echo -e "\033[1;32m- Installation des dépendances de base (curl, git, unzip, etc.)\033[0m"
+echo -e "\033[1;32m- Installation de Node.js et NPM\033[0m"
+echo -e "\033[1;32m- Installation de PHP 8.2 et extensions nécessaires\033[0m"
+echo -e "\033[1;32m- Installation de Composer\033[0m"
+echo -e "\033[1;32m- Déploiement d'une application Laravel\033[0m"
+echo -e "\033[1;32m- Configuration des permissions pour Laravel\033[0m"
+echo -e "\033[1;32m- Génération de la clé Laravel\033[0m"
+echo -e "\033[1;32m- Configuration de Nginx pour Laravel\033[0m"
+echo -e "\033[1;32m- Configuration de Redis pour écouter en local\033[0m"
+echo -e "\033[1;32m- Configuration de Supervisor pour les workers Laravel\033[0m"
+echo -e "\033[1;32m- Redémarrage des services (Nginx, PHP-FPM, Redis, Supervisor)\033[0m"
+echo -e "\033[1;32m- Vérification des versions installées\033[0m"
+
+# Demander une confirmation avant de continuer
+read -p "Voulez-vous continuer ? (Oui/Non) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Oo]$ ]]; then
+    echo -e "\033[1;31m❌ Installation annulée.\033[0m"
+    exit 1
+fi
+
 echo "📝 Journalisation des étapes..."
 exec > >(tee /var/log/vm_setup.log) 2>&1
 
@@ -20,12 +54,14 @@ sudo apt update -qq
 sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath
 
 echo "📦 Installation de Composer..."
-curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp
+sudo mv /tmp/composer.phar /usr/local/bin/composer
 
 echo "🚀 Déploiement de Laravel..."
 sudo mkdir -p /var/www
 cd /var/www
-yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --optimize-autoloader --no-dev
+export COMPOSER_ALLOW_SUPERUSER=1
+yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --no-dev
 
 if [ ! -d "/var/www/laravel" ]; then
     echo "❌ Échec de l'installation de Laravel."
@@ -82,6 +118,10 @@ sudo ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 
+echo "🔧 Configuration de Redis pour écouter uniquement en local..."
+sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf
+sudo systemctl restart redis-server
+
 echo "🔧 Configuration de Supervisor pour les workers Laravel..."
 sudo tee /etc/supervisor/conf.d/laravel-worker.conf > /dev/null <<'EOF'
 [program:laravel-worker]
@@ -102,6 +142,12 @@ sudo supervisorctl start laravel-worker:*
 echo "🔧 Activation et redémarrage des services..."
 sudo systemctl restart nginx php8.2-fpm supervisor cron redis-server
 
+echo "✅ Vérification des services..."
+sudo systemctl is-active --quiet nginx && echo "✅ Nginx est actif" || echo "❌ Nginx n'est pas actif"
+sudo systemctl is-active --quiet php8.2-fpm && echo "✅ PHP-FPM est actif" || echo "❌ PHP-FPM n'est pas actif"
+sudo systemctl is-active --quiet redis-server && echo "✅ Redis est actif" || echo "❌ Redis n'est pas actif"
+sudo systemctl is-active --quiet supervisor && echo "✅ Supervisor est actif" || echo "❌ Supervisor n'est pas actif"
+
 echo "✅ Vérification des versions installées..."
 nginx -v
 php -v
@@ -113,4 +159,4 @@ curl --version
 redis-server --version
 supervisord -v
 
-echo "✅ Déploiement réussi ! Accès : http://$(hostname -I | awk '{print $1}')"
+echo -e "\n\033[1;32m✅ Déploiement réussi ! Accès : http://$(hostname -I | awk '{print $1}')\033[0m"
