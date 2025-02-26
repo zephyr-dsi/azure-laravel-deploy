@@ -1,6 +1,5 @@
 #!/bin/bash
-# set -euo pipefail
-
+set -euo pipefail
 exec > >(tee -a /var/log/deploy_laravel_debug.log) 2>&1
 set -x  # Affiche chaque commande exécutée
 
@@ -26,41 +25,9 @@ function show_progress {
 }
 
 # Afficher le titre du script
-print_title "🛠️ Script de déploiement d'une application Laravel sur Azure V 3.0 🚀"
+print_title "🛠️ Script de déploiement d'une application Laravel sur Azure V 5.0 🚀"
 
-# Afficher la liste des éléments qui seront installés et configurés
-echo -e "\033[1;33m📋 Liste des éléments qui seront installés et configurés :\033[0m"
-echo -e "\033[1;32m- Mise à jour des paquets système\033[0m"
-echo -e "\033[1;32m- Installation des dépendances de base :\033[0m"
-echo -e "  - \033[1;34msoftware-properties-common\033[0m (pour gérer les dépôts PPAs)"
-echo -e "  - \033[1;34mcurl\033[0m (pour télécharger des fichiers depuis Internet)"
-echo -e "  - \033[1;34mgit\033[0m (pour cloner des dépôts et gérer le versionnement)"
-echo -e "  - \033[1;34munzip\033[0m (pour décompresser des fichiers)"
-echo -e "  - \033[1;34msupervisor\033[0m (pour gérer les processus en arrière-plan)"
-echo -e "  - \033[1;34mcron\033[0m (pour exécuter des tâches planifiées)"
-echo -e "  - \033[1;34mredis-server\033[0m (pour le cache et les files d'attente)"
-echo -e "\033[1;32m- Installation de Node.js (dernière version) et NPM\033[0m"
-echo -e "\033[1;32m- Installation de PHP 8.2 et extensions nécessaires :\033[0m"
-echo -e "  - \033[1;34mphp8.2\033[0m (PHP 8.2)"
-echo -e "  - \033[1;34mphp8.2-fpm\033[0m (PHP FastCGI Process Manager)"
-echo -e "  - \033[1;34mphp8.2-mbstring\033[0m (pour les chaînes de caractères multi-octets)"
-echo -e "  - \033[1;34mphp8.2-xml\033[0m (pour le traitement XML)"
-echo -e "  - \033[1;34mphp8.2-zip\033[0m (pour la compression et décompression de fichiers)"
-echo -e "  - \033[1;34mphp8.2-bcmath\033[0m (pour les calculs mathématiques de précision)"
-echo -e "  - \033[1;34mphp8.2-sqlite3\033[0m (pour utiliser SQLite comme base de données)"
-echo -e "  - \033[1;34mphp8.2-mysql\033[0m (pour utiliser MySQL comme base de données)"
-echo -e "  - \033[1;34mphp8.2-pgsql\033[0m (pour utiliser PostgreSQL comme base de données)"
-echo -e "\033[1;32m- Installation de Composer\033[0m"
-echo -e "\033[1;32m- Déploiement d'une application Laravel\033[0m"
-echo -e "\033[1;32m- Configuration des permissions pour Laravel\033[0m"
-echo -e "\033[1;32m- Génération de la clé Laravel\033[0m"
-echo -e "\033[1;32m- Configuration de Nginx pour Laravel\033[0m"
-echo -e "\033[1;32m- Configuration de Redis pour écouter uniquement en local\033[0m"
-echo -e "\033[1;32m- Configuration de Supervisor pour les workers Laravel\033[0m"
-echo -e "\033[1;32m- Redémarrage des services (Nginx, PHP-FPM, Redis, Supervisor)\033[0m"
-echo -e "\033[1;32m- Vérification des versions installées\033[0m"
-
-# Demander une confirmation avant de continuer
+# Confirmation utilisateur
 read -p "Voulez-vous continuer ? (Oui/Non) " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Oo]$ ]]; then
@@ -71,82 +38,81 @@ fi
 # Mise à jour des paquets
 echo "🔄 Mise à jour des paquets..."
 sudo apt update -qq && sudo apt upgrade -y
-show_progress 0.5 10  # Barre de progression pendant la mise à jour
+show_progress 0.5 10
 
 # Installation des dépendances de base
 echo "📦 Installation des dépendances de base..."
 sudo apt install -y software-properties-common curl git unzip supervisor cron redis-server
-show_progress 0.5 10  # Barre de progression pendant l'installation
+show_progress 0.5 10
 
-# Installation de Node.js (dernière version)
-echo "📦 Installation de Node.js (dernière version) et NPM..."
-curl -fsSL https://deb.nodesource.com/setup_current.x | sudo -E bash -
+# Installation de Node.js 20 LTS et NPM
+echo "📦 Installation de Node.js 20 LTS et NPM..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
-show_progress 0.5 10  # Barre de progression pendant l'installation
+show_progress 0.5 10
 
-# Ajout du dépôt PHP 8.2 et installation
-echo "📦 Ajout du dépôt PHP 8.2 et installation..."
+# Installation de PHP 8.2 et extensions
+echo "📦 Installation de PHP 8.2 et extensions..."
 sudo add-apt-repository ppa:ondrej/php -y
 sudo apt update -qq
-sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3 php8.2-mysql php8.2-pgsql
-show_progress 0.5 10  # Barre de progression pendant l'installation
+sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3 php8.2-mysql php8.2-pgsql php8.2-curl php8.2-gd php8.2-intl php8.2-readline php8.2-tokenizer php8.2-opcache php8.2-redis php8.2-memcached
+show_progress 0.5 10
 
 # Installation de Composer
 echo "📦 Installation de Composer..."
 curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp
 sudo mv /tmp/composer.phar /usr/local/bin/composer
-show_progress 0.5 5  # Barre de progression pendant l'installation
+
+# Vérification de l'installation de Composer
+if ! command -v composer &> /dev/null; then
+    echo "❌ Composer n'est pas installé correctement."
+    exit 1
+fi
+show_progress 0.5 5
 
 # Déploiement de Laravel
 echo "🚀 Déploiement de Laravel..."
 sudo mkdir -p /var/www
 cd /var/www
 
-# Supprimer le répertoire laravel s'il existe déjà
+# Suppression du dossier Laravel existant
 if [ -d "laravel" ]; then
-    echo "🗑️ Suppression de l'ancien répertoire laravel..."
+    echo "🗑️ Suppression de l'ancien répertoire Laravel..."
     sudo rm -rf laravel
 fi
 
 export COMPOSER_ALLOW_SUPERUSER=1
 yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --no-dev
-show_progress 0.5 10  # Barre de progression pendant la création du projet
+show_progress 0.5 10
 
 if [ ! -d "/var/www/laravel" ]; then
     echo "❌ Échec de l'installation de Laravel."
     exit 1
 fi
 
-# Configuration des permissions pour Laravel
+# Configuration des permissions Laravel
 echo "🔧 Configuration des permissions pour Laravel..."
 sudo chown -R www-data:www-data /var/www/laravel
 sudo chmod -R 775 /var/www/laravel/storage /var/www/laravel/bootstrap/cache /var/www/laravel/vendor
 
-# Génération de la clé Laravel
-echo "🔑 Génération de la clé Laravel..."
+# Génération de la clé Laravel et cache
+echo "🔑 Configuration de Laravel..."
 cd /var/www/laravel
 yes | php artisan key:generate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan storage:link  # Crée le lien symbolique pour le stockage
 
-# Configuration de Nginx pour Laravel
-echo "🔧 Configuration de Nginx pour Laravel..."
+# Configuration de Nginx
+echo "🔧 Configuration de Nginx..."
 sudo tee /etc/nginx/sites-available/laravel > /dev/null <<'EOF'
 server {
     listen 80;
     server_name _;
-
     root /var/www/laravel/public;
     index index.php index.html index.htm;
-
     server_tokens off;
-    fastcgi_hide_header X-Powered-By;
-
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
-        expires 30d;
-        add_header Cache-Control "public, no-transform";
-    }
 
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -162,22 +128,26 @@ server {
     location ~ /\.ht {
         deny all;
     }
+
+    # En-têtes de sécurité
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-XSS-Protection "1; mode=block";
 }
 EOF
 
-# Activation de la configuration Nginx
-echo "🔧 Activation de la configuration Nginx..."
+# Activation et test de la configuration Nginx
 sudo ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 
-# Configuration de Redis pour écouter uniquement en local
-echo "🔧 Configuration de Redis pour écouter uniquement en local..."
+# Configuration de Redis
+echo "🔧 Configuration de Redis..."
 sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf
 sudo systemctl restart redis-server
 
-# Configuration de Supervisor pour les workers Laravel
-echo "🔧 Configuration de Supervisor pour les workers Laravel..."
+# Configuration de Supervisor
+echo "🔧 Configuration de Supervisor..."
 sudo tee /etc/supervisor/conf.d/laravel-worker.conf > /dev/null <<'EOF'
 [program:laravel-worker]
 process_name=%(program_name)s_%(process_num)02d
@@ -190,30 +160,28 @@ redirect_stderr=true
 stdout_logfile=/var/www/laravel/storage/logs/worker.log
 EOF
 
-# Redémarrage de Supervisor
-echo "🔧 Redémarrage de Supervisor..."
-sudo supervisorctl reread
-sudo supervisorctl update
-sudo supervisorctl start laravel-worker:*
-
-# Activation et redémarrage des services
-echo "🔧 Activation et redémarrage des services..."
-
-# Liste des services à redémarrer et vérifier
+# Redémarrage des services
+echo "🔧 Redémarrage des services..."
 SERVICES=("nginx" "php8.2-fpm" "supervisor" "cron" "redis-server")
-
-# Redémarrage et vérification des services
 for service in "${SERVICES[@]}"; do
     echo "🔄 Redémarrage de $service..."
     if sudo systemctl restart "$service"; then
         echo "✅ $service redémarré avec succès."
     else
-        echo "❌ Échec du redémarrage de $service."
-        exit 1  # Arrête le script si un service échoue à redémarrer
+        echo "❌ Échec du redémarrage de $service. Affichage des logs :"
+        sudo journalctl -xe -u "$service"
+        exit 1
     fi
 done
 
-# Vérification de l'état des services
+# Activation des services au démarrage
+echo "🔧 Activation des services au démarrage..."
+for service in "${SERVICES[@]}"; do
+    sudo systemctl enable "$service"
+    echo "✅ $service activé au démarrage."
+done
+
+# Vérification des services
 echo "✅ Vérification des services..."
 for service in "${SERVICES[@]}"; do
     if sudo systemctl is-active --quiet "$service"; then
@@ -223,33 +191,22 @@ for service in "${SERVICES[@]}"; do
     fi
 done
 
-# Vérification des versions installées
-echo "✅ Vérification des versions installées..."
-nginx -v 2>&1
-php -v
+# Affichage des versions installées
+echo -e "\n📋 Versions installées :"
+php -v | grep "PHP"
 composer --version
 node -v
 npm -v
-git --version
-curl --version
+nginx -v 2>&1
 redis-server --version
 supervisord -v
 
-# Message de succès
-echo -e "\n\033[1;32m✅ Déploiement réussi !\033[0m"
-
-# Récupérer l'IP privée
+# Affichage des liens d'accès
 IP_PRIVATE=$(hostname -I | xargs | awk '{print $1}')
-
-# Récupérer l'IP publique
 IP_PUBLIC=$(curl -s ifconfig.me)
-
-# Afficher le lien d'accès à l'application
-echo -e "\n\033[1;36m🌐 Accédez à votre application Laravel :\033[0m"
-echo -e "\033[1;36m========================================\033[0m"
-echo -e "\033[1;36m🛡️  IP Privée  : http://$IP_PRIVATE\033[0m"
-echo -e "\033[1;36m🌍 IP Publique : http://$IP_PUBLIC\033[0m"
-echo -e "\033[1;36m========================================\033[0m"
+echo -e "\n🌐 Accédez à votre application Laravel :"
+echo -e "🛡️  IP Privée  : http://$IP_PRIVATE"
+echo -e "🌍 IP Publique : http://$IP_PUBLIC"
 
 # Afficher les ports à ouvrir sur Azure
 echo -e "\n\033[1;33m🔒 Ports à ouvrir sur Azure :\033[0m"
@@ -281,3 +238,5 @@ echo -e "| \033[1;34m443\033[0m   | HTTPS                | Ouvrir pour l'accès 
 echo -e "| \033[1;34m3306\033[0m  | MySQL                | Restreindre à votre IP ou réseau privé. |"
 echo -e "| \033[1;34m6379\033[0m  | Redis                | Restreindre à votre IP ou réseau privé. |"
 echo -e "+-------+----------------------+-----------------------------------------+"
+
+echo -e "\n✅ Déploiement réussi ! 🎉"
