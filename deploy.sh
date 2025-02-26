@@ -23,7 +23,7 @@ function show_progress {
 }
 
 # Afficher le titre du script
-print_title "🛠️ Script de déploiement d'une application Laravel sur Azure 🚀"
+print_title "🛠️ Script de déploiement d'une application Laravel sur Azure version v1.0  🚀"
 
 # Afficher la liste des éléments qui seront installés et configurés
 echo -e "\033[1;33m📋 Liste des éléments qui seront installés et configurés :\033[0m"
