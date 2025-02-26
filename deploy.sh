@@ -202,8 +202,6 @@ curl --version
 redis-server --version
 supervisord -v
 
-echo -e "\n\033[1;32m✅ Déploiement réussi ! Accès : http://$(hostname -I | awk '{print $1}')\033[0m"
-
 # Afficher le lien d'accès à l'application en grand
 echo -e "\n\033[1;32m✅ Déploiement réussi !\033[0m"
 echo -e "\033[1;36m========================================\033[0m"
