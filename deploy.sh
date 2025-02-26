@@ -23,7 +23,7 @@ function show_progress {
 }
 
 # Afficher le titre du script
-print_title "🛠️ Script de déploiement d'une application Laravel sur Azure version v1.0  🚀"
+print_title "🛠️ Script de déploiement d'une application Laravel sur Azure V 1.0 🚀"
 
 # Afficher la liste des éléments qui seront installés et configurés
 echo -e "\033[1;33m📋 Liste des éléments qui seront installés et configurés :\033[0m"
@@ -201,6 +201,8 @@ git --version
 curl --version
 redis-server --version
 supervisord -v
+
+echo -e "\n\033[1;32m✅ Déploiement réussi ! Accès : http://$(hostname -I | awk '{print $1}')\033[0m"
 
 # Afficher le lien d'accès à l'application en grand
 echo -e "\n\033[1;32m✅ Déploiement réussi !\033[0m"
