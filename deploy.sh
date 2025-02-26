@@ -183,16 +183,34 @@ sudo supervisorctl update
 sudo supervisorctl start laravel-worker:*
 
 echo "🔧 Activation et redémarrage des services..."
-sudo systemctl restart nginx php8.2-fpm supervisor cron redis-server
+
+# Liste des services à redémarrer et vérifier
+SERVICES=("nginx" "php8.2-fpm" "supervisor" "cron" "redis-server")
+
+# Redémarrage et vérification des services
+for service in "${SERVICES[@]}"; do
+    echo "🔄 Redémarrage de $service..."
+    if sudo systemctl restart "$service"; then
+        echo "✅ $service redémarré avec succès."
+    else
+        echo "❌ Échec du redémarrage de $service."
+        exit 1  # Arrête le script si un service échoue à redémarrer
+    fi
+done
 
 echo "✅ Vérification des services..."
-sudo systemctl is-active --quiet nginx && echo "✅ Nginx est actif" || echo "❌ Nginx n'est pas actif"
-sudo systemctl is-active --quiet php8.2-fpm && echo "✅ PHP-FPM est actif" || echo "❌ PHP-FPM n'est pas actif"
-sudo systemctl is-active --quiet redis-server && echo "✅ Redis est actif" || echo "❌ Redis n'est pas actif"
-sudo systemctl is-active --quiet supervisor && echo "✅ Supervisor est actif" || echo "❌ Supervisor n'est pas actif"
+
+# Vérification de l'état des services
+for service in "${SERVICES[@]}"; do
+    if sudo systemctl is-active --quiet "$service"; then
+        echo "✅ $service est actif"
+    else
+        echo "❌ $service n'est pas actif"
+    fi
+done
 
 echo "✅ Vérification des versions installées..."
-nginx -v
+nginx -v 2>&1
 php -v
 composer --version
 node -v
