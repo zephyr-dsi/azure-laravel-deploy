@@ -93,7 +93,10 @@ fi
 # Configuration des permissions Laravel
 echo "🔧 Configuration des permissions pour Laravel..."
 sudo chown -R www-data:www-data /var/www/laravel
-sudo chmod -R 775 /var/www/laravel/storage /var/www/laravel/bootstrap/cache /var/www/laravel/vendor
+sudo chmod -R 775 /var/www/laravel/storage /var/www/laravel/bootstrap/cache
+sudo chmod -R 775 /var/www/laravel/storage/framework/views
+sudo chmod -R 775 /var/www/laravel/storage/logs
+sudo chmod -R 775 /var/www/laravel/bootstrap/cache
 
 # Génération de la clé Laravel et cache
 echo "🔑 Configuration de Laravel..."
