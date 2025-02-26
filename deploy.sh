@@ -228,15 +228,4 @@ echo -e "    - Configurez Laravel pour envoyer les logs vers un service externe 
 echo -e "  - \033[1;34mMettre en place un système de monitoring :\033[0m"
 echo -e "    - Utilisez \033[1;34mNew Relic\033[0m ou \033[1;34mDatadog\033[0m pour surveiller les performances de votre application en temps réel."
 
-# Résumé des ports à ouvrir sur Azure
-echo -e "\n\033[1;33m📋 Résumé des ports à ouvrir sur Azure :\033[0m"
-echo -e "+-------+----------------------+-----------------------------------------+"
-echo -e "| Port  | Utilisation          | Recommandation                          |"
-echo -e "+-------+----------------------+-----------------------------------------+"
-echo -e "| \033[1;34m80\033[0m    | HTTP                 | Ouvrir pour l'accès public.             |"
-echo -e "| \033[1;34m443\033[0m   | HTTPS                | Ouvrir pour l'accès sécurisé (SSL).     |"
-echo -e "| \033[1;34m3306\033[0m  | MySQL                | Restreindre à votre IP ou réseau privé. |"
-echo -e "| \033[1;34m6379\033[0m  | Redis                | Restreindre à votre IP ou réseau privé. |"
-echo -e "+-------+----------------------+-----------------------------------------+"
-
 echo -e "\n✅ Déploiement réussi ! 🎉"
