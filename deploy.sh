@@ -202,6 +202,8 @@ curl --version
 redis-server --version
 supervisord -v
 
+exec 1>&3
+
 echo -e "\n\033[1;32m✅ Déploiement réussi ! Accès : http://$(hostname -I | awk '{print $1}')\033[0m"
 
 # Afficher le lien d'accès à l'application en grand
@@ -242,3 +244,5 @@ echo -e "| \033[1;34m443\033[0m   | HTTPS                | Ouvrir pour l'accès 
 echo -e "| \033[1;34m3306\033[0m  | MySQL                | Restreindre à votre IP ou réseau privé. |"
 echo -e "| \033[1;34m6379\033[0m  | Redis                | Restreindre à votre IP ou réseau privé. |"
 echo -e "+-------+----------------------+-----------------------------------------+"
+
+exec > >(sudo stdbuf -oL tee /var/log/vm_setup.log) 2>&1
