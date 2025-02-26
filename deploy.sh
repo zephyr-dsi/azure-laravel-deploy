@@ -202,17 +202,22 @@ curl --version
 redis-server --version
 supervisord -v
 
-exec 1>&3
+echo -e "\n\033[1;32m✅ Déploiement réussi !\033[0m"
 
-echo -e "\n\033[1;32m✅ Déploiement réussi ! Accès : http://$(hostname -I | awk '{print $1}')\033[0m"
+# Récupérer l'IP privée
+IP_PRIVATE=$(hostname -I | xargs | awk '{print $1}')
+
+# Récupérer l'IP publique
+IP_PUBLIC=$(curl -s ifconfig.me)
 
 # Afficher le lien d'accès à l'application en grand
-echo -e "\n\033[1;32m✅ Déploiement réussi !\033[0m"
+# Afficher les IPs
+echo -e "\n\033[1;36m🌐 Accédez à votre application Laravel :\033[0m"
 echo -e "\033[1;36m========================================\033[0m"
-echo -e "\033[1;36m🌐 Accédez à votre application Laravel :\033[0m"
+echo -e "\033[1;36m🛡️  IP Privée  : http://$IP_PRIVATE\033[0m"
+echo -e "\033[1;36m🌍 IP Publique : http://$IP_PUBLIC\033[0m"
 echo -e "\033[1;36m========================================\033[0m"
-echo -e "\033[1;36m      http://$(hostname -I | awk '{print $1}')\033[0m"
-echo -e "\033[1;36m========================================\033[0m"
+
 
 # Afficher les ports à ouvrir sur Azure
 echo -e "\n\033[1;33m🔒 Ports à ouvrir sur Azure :\033[0m"
