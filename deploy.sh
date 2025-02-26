@@ -24,6 +24,21 @@ function show_progress {
     echo -e "\n"
 }
 
+# Fonction pour exécuter des commandes avec gestion d'erreurs
+function run_command {
+    local command="$1"
+    local description="$2"
+
+    echo "🚀 Exécution : $description"
+    $command 2>> /var/log/laravel_errors.log
+    if [ $? -ne 0 ]; then
+        echo "⚠️ Erreur lors de l'exécution de : $description"
+        echo "🔍 Voir /var/log/laravel_errors.log pour plus de détails."
+    else
+        echo "✅ Succès : $description"
+    fi
+}
+
 # Afficher le titre du script
 print_title "🛠️ Script de déploiement d'une application Laravel sur Azure V 5.0 🚀"
 
@@ -37,31 +52,31 @@ fi
 
 # Mise à jour des paquets
 echo "🔄 Mise à jour des paquets..."
-sudo apt update -qq && sudo apt upgrade -y
+run_command "sudo apt update -qq && sudo apt upgrade -y" "Mise à jour des paquets"
 show_progress 0.5 10
 
 # Installation des dépendances de base
 echo "📦 Installation des dépendances de base..."
-sudo apt install -y software-properties-common curl git unzip supervisor cron redis-server
+run_command "sudo apt install -y software-properties-common curl git unzip supervisor cron redis-server" "Installation des dépendances de base"
 show_progress 0.5 10
 
 # Installation de Node.js 20 LTS et NPM
 echo "📦 Installation de Node.js 20 LTS et NPM..."
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
+run_command "curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -" "Configuration de Node.js"
+run_command "sudo apt install -y nodejs" "Installation de Node.js"
 show_progress 0.5 10
 
 # Installation de PHP 8.2 et extensions
 echo "📦 Installation de PHP 8.2 et extensions..."
-sudo add-apt-repository ppa:ondrej/php -y
-sudo apt update -qq
-sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3 php8.2-mysql php8.2-pgsql php8.2-curl php8.2-gd php8.2-intl php8.2-readline php8.2-tokenizer php8.2-opcache php8.2-redis php8.2-memcached
+run_command "sudo add-apt-repository ppa:ondrej/php -y" "Ajout du dépôt PHP"
+run_command "sudo apt update -qq" "Mise à jour des paquets"
+run_command "sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3 php8.2-mysql php8.2-pgsql php8.2-curl php8.2-gd php8.2-intl php8.2-readline php8.2-tokenizer php8.2-opcache php8.2-redis php8.2-memcached" "Installation de PHP et extensions"
 show_progress 0.5 10
 
 # Installation de Composer
 echo "📦 Installation de Composer..."
-curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp
-sudo mv /tmp/composer.phar /usr/local/bin/composer
+run_command "curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp" "Téléchargement de Composer"
+run_command "sudo mv /tmp/composer.phar /usr/local/bin/composer" "Installation de Composer"
 
 # Vérification de l'installation de Composer
 if ! command -v composer &> /dev/null; then
@@ -72,17 +87,17 @@ show_progress 0.5 5
 
 # Déploiement de Laravel
 echo "🚀 Déploiement de Laravel..."
-sudo mkdir -p /var/www
+run_command "sudo mkdir -p /var/www" "Création du répertoire /var/www"
 cd /var/www
 
 # Suppression du dossier Laravel existant
 if [ -d "laravel" ]; then
     echo "🗑️ Suppression de l'ancien répertoire Laravel..."
-    sudo rm -rf laravel
+    run_command "sudo rm -rf laravel" "Suppression de l'ancien répertoire Laravel"
 fi
 
 export COMPOSER_ALLOW_SUPERUSER=1
-yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --no-dev
+run_command "yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --no-dev" "Création du projet Laravel"
 show_progress 0.5 10
 
 if [ ! -d "/var/www/laravel" ]; then
@@ -92,24 +107,21 @@ fi
 
 # Configuration des permissions Laravel
 echo "🔧 Configuration des permissions pour Laravel..."
-sudo chown -R www-data:www-data /var/www/laravel
-sudo chmod -R 775 /var/www/laravel/storage /var/www/laravel/bootstrap/cache
-sudo chmod -R 775 /var/www/laravel/storage/framework/views
-sudo chmod -R 775 /var/www/laravel/storage/logs
-sudo chmod -R 775 /var/www/laravel/bootstrap/cache
+run_command "sudo chown -R www-data:www-data /var/www/laravel" "Changement de propriétaire pour Laravel"
+run_command "sudo chmod -R 775 /var/www/laravel/storage /var/www/laravel/bootstrap/cache" "Configuration des permissions pour Laravel"
 
 # Génération de la clé Laravel et cache
 echo "🔑 Configuration de Laravel..."
 cd /var/www/laravel
-yes | php artisan key:generate --force
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan storage:link  # Crée le lien symbolique pour le stockage
+run_command "yes | php artisan key:generate --force" "Génération de la clé Laravel"
+run_command "php artisan config:cache" "Mise en cache de la configuration"
+run_command "php artisan route:cache" "Mise en cache des routes"
+run_command "php artisan view:cache" "Mise en cache des vues"
+run_command "php artisan storage:link" "Création du lien symbolique pour le stockage"
 
 # Configuration de Nginx
 echo "🔧 Configuration de Nginx..."
-sudo tee /etc/nginx/sites-available/laravel > /dev/null <<'EOF'
+run_command "sudo tee /etc/nginx/sites-available/laravel > /dev/null <<'EOF'
 server {
     listen 80;
     server_name _;
@@ -133,25 +145,25 @@ server {
     }
 
     # En-têtes de sécurité
-    add_header X-Frame-Options "SAMEORIGIN";
-    add_header X-Content-Type-Options "nosniff";
-    add_header X-XSS-Protection "1; mode=block";
+    add_header X-Frame-Options \"SAMEORIGIN\";
+    add_header X-Content-Type-Options \"nosniff\";
+    add_header X-XSS-Protection \"1; mode=block\";
 }
-EOF
+EOF" "Configuration de Nginx"
 
 # Activation et test de la configuration Nginx
-sudo ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
+run_command "sudo ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/" "Activation de la configuration Nginx"
+run_command "sudo rm -f /etc/nginx/sites-enabled/default" "Suppression de la configuration par défaut de Nginx"
+run_command "sudo nginx -t && sudo systemctl reload nginx" "Test et rechargement de Nginx"
 
 # Configuration de Redis
 echo "🔧 Configuration de Redis..."
-sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf
-sudo systemctl restart redis-server
+run_command "sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf" "Configuration de Redis"
+run_command "sudo systemctl restart redis-server" "Redémarrage de Redis"
 
 # Configuration de Supervisor
 echo "🔧 Configuration de Supervisor..."
-sudo tee /etc/supervisor/conf.d/laravel-worker.conf > /dev/null <<'EOF'
+run_command "sudo tee /etc/supervisor/conf.d/laravel-worker.conf > /dev/null <<'EOF'
 [program:laravel-worker]
 process_name=%(program_name)s_%(process_num)02d
 command=php /var/www/laravel/artisan queue:work --sleep=3 --tries=3
@@ -161,27 +173,19 @@ user=www-data
 numprocs=2
 redirect_stderr=true
 stdout_logfile=/var/www/laravel/storage/logs/worker.log
-EOF
+EOF" "Configuration de Supervisor"
 
 # Redémarrage des services
 echo "🔧 Redémarrage des services..."
 SERVICES=("nginx" "php8.2-fpm" "supervisor" "cron" "redis-server")
 for service in "${SERVICES[@]}"; do
-    echo "🔄 Redémarrage de $service..."
-    if sudo systemctl restart "$service"; then
-        echo "✅ $service redémarré avec succès."
-    else
-        echo "❌ Échec du redémarrage de $service. Affichage des logs :"
-        sudo journalctl -xe -u "$service"
-        exit 1
-    fi
+    run_command "sudo systemctl restart $service" "Redémarrage de $service"
 done
 
 # Activation des services au démarrage
 echo "🔧 Activation des services au démarrage..."
 for service in "${SERVICES[@]}"; do
-    sudo systemctl enable "$service"
-    echo "✅ $service activé au démarrage."
+    run_command "sudo systemctl enable $service" "Activation de $service au démarrage"
 done
 
 # Vérification des services
