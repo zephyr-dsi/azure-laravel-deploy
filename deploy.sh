@@ -34,8 +34,10 @@ function run_command {
     if [ $? -ne 0 ]; then
         echo "⚠️ Erreur lors de l'exécution de : $description"
         echo "🔍 Voir /var/log/laravel_errors.log pour plus de détails."
+        return 1
     else
         echo "✅ Succès : $description"
+        return 0
     fi
 }
 
@@ -52,31 +54,32 @@ fi
 
 # Mise à jour des paquets
 echo "🔄 Mise à jour des paquets..."
-run_command "sudo apt update -qq && sudo apt upgrade -y" "Mise à jour des paquets"
+run_command "sudo apt update -qq" "Mise à jour des paquets" || { echo "❌ Échec de la mise à jour des paquets."; exit 1; }
+run_command "sudo apt upgrade -y" "Mise à niveau des paquets" || { echo "❌ Échec de la mise à niveau des paquets."; exit 1; }
 show_progress 0.5 10
 
 # Installation des dépendances de base
 echo "📦 Installation des dépendances de base..."
-run_command "sudo apt install -y software-properties-common curl git unzip supervisor cron redis-server" "Installation des dépendances de base"
+run_command "sudo apt install -y software-properties-common curl git unzip supervisor cron redis-server" "Installation des dépendances de base" || { echo "❌ Échec de l'installation des dépendances de base."; exit 1; }
 show_progress 0.5 10
 
 # Installation de Node.js 20 LTS et NPM
 echo "📦 Installation de Node.js 20 LTS et NPM..."
-run_command "curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -" "Configuration de Node.js"
-run_command "sudo apt install -y nodejs" "Installation de Node.js"
+run_command "curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -" "Configuration de Node.js" || { echo "❌ Échec de la configuration de Node.js."; exit 1; }
+run_command "sudo apt install -y nodejs" "Installation de Node.js" || { echo "❌ Échec de l'installation de Node.js."; exit 1; }
 show_progress 0.5 10
 
 # Installation de PHP 8.2 et extensions
 echo "📦 Installation de PHP 8.2 et extensions..."
-run_command "sudo add-apt-repository ppa:ondrej/php -y" "Ajout du dépôt PHP"
-run_command "sudo apt update -qq" "Mise à jour des paquets"
-run_command "sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3 php8.2-mysql php8.2-pgsql php8.2-curl php8.2-gd php8.2-intl php8.2-readline php8.2-tokenizer php8.2-opcache php8.2-redis php8.2-memcached" "Installation de PHP et extensions"
+run_command "sudo add-apt-repository ppa:ondrej/php -y" "Ajout du dépôt PHP" || { echo "❌ Échec de l'ajout du dépôt PHP."; exit 1; }
+run_command "sudo apt update -qq" "Mise à jour des paquets" || { echo "❌ Échec de la mise à jour des paquets."; exit 1; }
+run_command "sudo apt install -y nginx php8.2 php8.2-fpm php8.2-mbstring php8.2-xml php8.2-zip php8.2-bcmath php8.2-sqlite3 php8.2-mysql php8.2-pgsql php8.2-curl php8.2-gd php8.2-intl php8.2-readline php8.2-tokenizer php8.2-opcache php8.2-redis php8.2-memcached" "Installation de PHP et extensions" || { echo "❌ Échec de l'installation de PHP et extensions."; exit 1; }
 show_progress 0.5 10
 
 # Installation de Composer
 echo "📦 Installation de Composer..."
-run_command "curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp" "Téléchargement de Composer"
-run_command "sudo mv /tmp/composer.phar /usr/local/bin/composer" "Installation de Composer"
+run_command "curl -sS https://getcomposer.org/installer | php -- --install-dir=/tmp" "Téléchargement de Composer" || { echo "❌ Échec du téléchargement de Composer."; exit 1; }
+run_command "sudo mv /tmp/composer.phar /usr/local/bin/composer" "Installation de Composer" || { echo "❌ Échec de l'installation de Composer."; exit 1; }
 
 # Vérification de l'installation de Composer
 if ! command -v composer &> /dev/null; then
@@ -87,17 +90,17 @@ show_progress 0.5 5
 
 # Déploiement de Laravel
 echo "🚀 Déploiement de Laravel..."
-run_command "sudo mkdir -p /var/www" "Création du répertoire /var/www"
+run_command "sudo mkdir -p /var/www" "Création du répertoire /var/www" || { echo "❌ Échec de la création du répertoire /var/www."; exit 1; }
 cd /var/www
 
 # Suppression du dossier Laravel existant
 if [ -d "laravel" ]; then
     echo "🗑️ Suppression de l'ancien répertoire Laravel..."
-    run_command "sudo rm -rf laravel" "Suppression de l'ancien répertoire Laravel"
+    run_command "sudo rm -rf laravel" "Suppression de l'ancien répertoire Laravel" || { echo "❌ Échec de la suppression de l'ancien répertoire Laravel."; exit 1; }
 fi
 
 export COMPOSER_ALLOW_SUPERUSER=1
-run_command "yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --no-dev" "Création du projet Laravel"
+run_command "yes | composer create-project --prefer-dist laravel/laravel laravel --no-interaction --no-dev" "Création du projet Laravel" || { echo "❌ Échec de la création du projet Laravel."; exit 1; }
 show_progress 0.5 10
 
 if [ ! -d "/var/www/laravel" ]; then
@@ -107,17 +110,17 @@ fi
 
 # Configuration des permissions Laravel
 echo "🔧 Configuration des permissions pour Laravel..."
-run_command "sudo chown -R www-data:www-data /var/www/laravel" "Changement de propriétaire pour Laravel"
-run_command "sudo chmod -R 775 /var/www/laravel/storage /var/www/laravel/bootstrap/cache" "Configuration des permissions pour Laravel"
+run_command "sudo chown -R www-data:www-data /var/www/laravel" "Changement de propriétaire pour Laravel" || { echo "❌ Échec du changement de propriétaire pour Laravel."; exit 1; }
+run_command "sudo chmod -R 775 /var/www/laravel/storage /var/www/laravel/bootstrap/cache" "Configuration des permissions pour Laravel" || { echo "❌ Échec de la configuration des permissions pour Laravel."; exit 1; }
 
 # Génération de la clé Laravel et cache
 echo "🔑 Configuration de Laravel..."
 cd /var/www/laravel
-run_command "yes | php artisan key:generate --force" "Génération de la clé Laravel"
-run_command "php artisan config:cache" "Mise en cache de la configuration"
-run_command "php artisan route:cache" "Mise en cache des routes"
-run_command "php artisan view:cache" "Mise en cache des vues"
-run_command "php artisan storage:link" "Création du lien symbolique pour le stockage"
+run_command "yes | php artisan key:generate --force" "Génération de la clé Laravel" || { echo "❌ Échec de la génération de la clé Laravel."; exit 1; }
+run_command "php artisan config:cache" "Mise en cache de la configuration" || { echo "❌ Échec de la mise en cache de la configuration."; exit 1; }
+run_command "php artisan route:cache" "Mise en cache des routes" || { echo "❌ Échec de la mise en cache des routes."; exit 1; }
+run_command "php artisan view:cache" "Mise en cache des vues" || { echo "❌ Échec de la mise en cache des vues."; exit 1; }
+run_command "php artisan storage:link" "Création du lien symbolique pour le stockage" || { echo "❌ Échec de la création du lien symbolique pour le stockage."; exit 1; }
 
 # Configuration de Nginx
 echo "🔧 Configuration de Nginx..."
@@ -149,17 +152,17 @@ server {
     add_header X-Content-Type-Options \"nosniff\";
     add_header X-XSS-Protection \"1; mode=block\";
 }
-EOF" "Configuration de Nginx"
+EOF" "Configuration de Nginx" || { echo "❌ Échec de la configuration de Nginx."; exit 1; }
 
 # Activation et test de la configuration Nginx
-run_command "sudo ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/" "Activation de la configuration Nginx"
-run_command "sudo rm -f /etc/nginx/sites-enabled/default" "Suppression de la configuration par défaut de Nginx"
-run_command "sudo nginx -t && sudo systemctl reload nginx" "Test et rechargement de Nginx"
+run_command "sudo ln -sf /etc/nginx/sites-available/laravel /etc/nginx/sites-enabled/" "Activation de la configuration Nginx" || { echo "❌ Échec de l'activation de la configuration Nginx."; exit 1; }
+run_command "sudo rm -f /etc/nginx/sites-enabled/default" "Suppression de la configuration par défaut de Nginx" || { echo "❌ Échec de la suppression de la configuration par défaut de Nginx."; exit 1; }
+run_command "sudo nginx -t && sudo systemctl reload nginx" "Test et rechargement de Nginx" || { echo "❌ Échec du test ou du rechargement de Nginx."; exit 1; }
 
 # Configuration de Redis
 echo "🔧 Configuration de Redis..."
-run_command "sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf" "Configuration de Redis"
-run_command "sudo systemctl restart redis-server" "Redémarrage de Redis"
+run_command "sudo sed -i 's/bind 127.0.0.1 ::1/bind 127.0.0.1/' /etc/redis/redis.conf" "Configuration de Redis" || { echo "❌ Échec de la configuration de Redis."; exit 1; }
+run_command "sudo systemctl restart redis-server" "Redémarrage de Redis" || { echo "❌ Échec du redémarrage de Redis."; exit 1; }
 
 # Configuration de Supervisor
 echo "🔧 Configuration de Supervisor..."
@@ -173,19 +176,19 @@ user=www-data
 numprocs=2
 redirect_stderr=true
 stdout_logfile=/var/www/laravel/storage/logs/worker.log
-EOF" "Configuration de Supervisor"
+EOF" "Configuration de Supervisor" || { echo "❌ Échec de la configuration de Supervisor."; exit 1; }
 
 # Redémarrage des services
 echo "🔧 Redémarrage des services..."
 SERVICES=("nginx" "php8.2-fpm" "supervisor" "cron" "redis-server")
 for service in "${SERVICES[@]}"; do
-    run_command "sudo systemctl restart $service" "Redémarrage de $service"
+    run_command "sudo systemctl restart $service" "Redémarrage de $service" || { echo "❌ Échec du redémarrage de $service."; exit 1; }
 done
 
 # Activation des services au démarrage
 echo "🔧 Activation des services au démarrage..."
 for service in "${SERVICES[@]}"; do
-    run_command "sudo systemctl enable $service" "Activation de $service au démarrage"
+    run_command "sudo systemctl enable $service" "Activation de $service au démarrage" || { echo "❌ Échec de l'activation de $service au démarrage."; exit 1; }
 done
 
 # Vérification des services
