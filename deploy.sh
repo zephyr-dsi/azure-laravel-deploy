@@ -1,5 +1,8 @@
 #!/bin/bash
-set -euo pipefail
+# set -euo pipefail
+
+exec > >(tee -a /var/log/deploy_laravel_debug.log) 2>&1
+set -x  # Affiche chaque commande exécutée
 
 # Fonction pour afficher un titre stylisé
 function print_title {
